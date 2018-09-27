@@ -1,0 +1,106 @@
+---
+title: "Visualization Part 1"
+author: "Divya Bisht"
+date: "9/27/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+
+```
+
+
+```{r data_import, cache = TRUE}
+library(rnoaa)
+weather_df = 
+  rnoaa::meteo_pull_monitors(c("USW00094728", "USC00519397", "USS0023B17S"),
+                      var = c("PRCP", "TMIN", "TMAX"), 
+                      date_min = "2017-01-01",
+                      date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY", 
+                      USC00519397 = "Waikiki_HA",
+                      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+```
+
+## Start a plot
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax))
+```
+
+Scatterplot
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point()
+```
+
+```{r}
+weather_sp = 
+  ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+    geom_point()
+```
+
+## More plot options 
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+    geom_point(aes(color = name))
+```
+
+Add an aesthetic 
+-add a geom
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .5) +
+  geom_smooth(se = FALSE)
+```
+
+Some options!
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = 0.4) +
+  geom_smooth(se = FALSE)
+```
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax, color = name)) + 
+  geom_point(alpha = 0.4) +
+  geom_smooth(se = FALSE)
+```
+
+Facetting
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax, color = name)) + 
+  geom_point(alpha = 0.4) +
+  geom_smooth(se = FALSE) +
+  facet_grid( ~ name)
+```
+
+More interesting plot
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
