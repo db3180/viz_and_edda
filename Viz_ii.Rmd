@@ -122,6 +122,12 @@ weather_plot = ggplot(weather_df, aes(x = tmin, y = tmax)) +
 ggsave("weather_plot.pdf", weather_plot, width = 8, height = 5)
 ```
 
+Visualization 2
+
+```{r}
+library(ggridges)
+library(patchwork)
+```
 
 
 
