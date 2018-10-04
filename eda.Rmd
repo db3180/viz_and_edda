@@ -1,0 +1,169 @@
+---
+title: "eda"
+author: "Divya Bisht"
+date: "10/4/2018"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r data_import, cache = TRUE}
+library(rnoaa)
+weather_df = 
+  rnoaa::meteo_pull_monitors(c("USW00094728", "USC00519397", "USS0023B17S"),
+                      var = c("PRCP", "TMIN", "TMAX"), 
+                      date_min = "2017-01-01",
+                      date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY", 
+                      USC00519397 = "Waikiki_HA",
+                      USS0023B17S = "Waterhole_WA"),
+     tmin = tmin / 10,
+    tmax = tmax / 10,
+    month = lubridate::floor_date(date, unit = "month")) %>%
+  select(name, id, date, month, everything())
+
+```
+
+```{r}
+weather_df %>%
+  group_by(name, month)
+```
+
+How many unique variables are there?
+-Start with summarize function
+
+count first
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  summarize(number = n())
+
+
+weather_df %>%
+  group_by(month) %>%
+  summarize(number = n())
+```
+
+## Grouped summaries
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  summarize(number = n(), 
+      mean_tmax = mean(tmax))
+```
+Mean function has: 
+-na.rm = should I remove missing values? Set to false by default
+
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  summarize(number = n(), 
+      mean_tmax = mean(tmax, na.rm = TRUE))
+```
+Median
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  summarize(number = n(),
+      median_precip = median(prcp, na.rm = TRUE), 
+      sd_tmin = sd(tmin, na.rm = TRUE))
+```
+
+Still a tibble
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  summarize(number = n(),
+      mean_tmax = mean(tmax, na.rm = TRUE), 
+      sd_tmin = sd(tmin, na.rm = TRUE)) %>%
+
+ggplot(aes(x = month, y = mean_tmax, color = name)) + 
+  geom_point()
+```
+Month data frame
+```{r}
+month_df = weather_df %>%
+  group_by(name, month) %>%
+  summarize(number = n(),
+      mean_tmax = mean(tmax, na.rm = TRUE),
+      median_precip = median(prcp, na.rm = TRUE),
+      sd_tmin = sd(tmin, na.rm = TRUE)) %>%
+  
+  ggplot(weather_df, aes(x = date, y = tmax, color = name)) +
+    geom_point(),
+    geom_line(data = month_df, aes(x = month, y = mean_tmax))
+```
+Tidy is not always best for people
+
+```{r}
+weather_df %>%
+   group_by(name, month) %>%
+  summarize(mean_tmax = mean(tmax, na.rm = TRUE)) %>%
+      spread(key = month, value = mean_tmax) %>%
+  knitr::kable(digits = 3)
+```
+
+##Grouped mutate
+  
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  mutate(mean_tmax = mean(tmax, na.rm = TRUE))
+
+```
+
+Another example
+-going to take the average temp in each place and repeat the average temp of that please in that column
+
+```{r}
+weather_df %>%
+  group_by(name) %>%
+  mutate(mean_tmax = mean(tmax, na.rm = TRUE), 
+         centered_tmax = tmax - mean_tmax) %>%
+  
+  ggplot(aes(x = date, y = centered_tmax, color = name)) + 
+    geom_point()
+```
+
+##Window functions 
+Use ranks
+-tells you the ordering of values. Like tell you the coldest/hottest day in a certain month
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  mutate(tmax_rank = min_rank(tmax)) %>%
+  filter(tmax_rank < 2) #this tells you each instance there was the coldest day.
+```
+if we want to get warmest day
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  mutate(tmax_rank = min_rank(desc(tmax))) %>%
+  filter(tmax_rank < 2)
+```
+
+How much did observations change in certain variables(maybe over time?) 
+use the lag function. 
+```{r}
+weather_df %>%
+  group_by(name) %>%
+  mutate(lag_tmax = lag(tmax))
+```
+How neat is this? 
+  -how much variability is there in the day-to-day temp of the locations?
+```{r}
+weather_df %>%
+  group_by(name) %>%
+  mutate(lag_tmax = lag(tmax), 
+         one_day_change = tmax - lag_tmax) %>%
+  summarize(sd_one_day_change = sd(one_day_change, na.rm = TRUE))
+```
+
+
+
